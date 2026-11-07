@@ -1,0 +1,9 @@
+--atlas -f la8 -z auto
+hg/looking.png
+hg/battery.png
+hg/idle_blink.png
+hg/listen_blink.png
+hg/coding_blink.png
+hg/research_blink.png
+hg/delegate_blink.png
+hg/attention_blink.png

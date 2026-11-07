@@ -1,0 +1,9 @@
+--atlas -f la8 -z auto
+hg/done.png
+hg/asleep.png
+hg/attention.png
+hg/error.png
+hg/talk_open.png
+hg/talk_closed.png
+hg/talk_blink.png
+hg/talk_blinkc.png

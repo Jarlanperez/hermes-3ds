@@ -1,0 +1,14 @@
+{
+  "name": "Sam",
+  "say_name_as": "",
+  "port": 8766,
+  "hermes_url": "http://127.0.0.1:8642",
+  "api_key": "",
+  "hermes_env": "~/.hermes/.env",
+  "stt_url": "http://127.0.0.1:8178/v1/audio/transcriptions",
+  "stt_model": "whisper-1",
+  "voice_url": "http://127.0.0.1:8880/v1/audio/speech",
+  "voice_model": "kokoro",
+  "voice_name": "af_heart",
+  "voice_key": "local"
+}

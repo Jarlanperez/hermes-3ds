@@ -1,0 +1,11 @@
+dist/
+app/build/
+*.3dsx
+*.cia
+*.elf
+*.smdh
+*.map
+cia/banner.bnr
+cia/icon.smdh
+__pycache__/
+*.pyc

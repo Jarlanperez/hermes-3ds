@@ -1,0 +1,9 @@
+--atlas -f la8 -z auto
+hg/hello.png
+hg/idle.png
+hg/listen.png
+hg/think.png
+hg/coding.png
+hg/research.png
+hg/making.png
+hg/delegate.png
