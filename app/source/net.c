@@ -336,6 +336,22 @@ void worker(void* arg) {
             snprintf(lastState, sizeof lastState, "%s", sh.state);
             LightLock_Unlock(&lk);
             if (newTurnDone) fetch_earlier();
+            // photo turn just started: she says a short "let me take a look" while the model studies it
+            static char cueJob[24] = "";
+            LightLock_Lock(&lk);
+            bool cueIt = !firstPoll && !strcmp(sh.state, "thinking") && !strcmp(sh.kind, "looking") && strcmp(cueJob, sh.job);
+            if (cueIt) snprintf(cueJob, sizeof cueJob, "%s", sh.job);
+            LightLock_Unlock(&lk);
+            if (cueIt && voiceOn && audio_ok() && !speechIn) {
+                char* pcm = NULL;
+                int c = http_req(HTTPC_METHOD_GET, "/app/v2/cue?kind=looking", NULL, 0, &pcm, 5000000000ULL);
+                if (c == 200 && pcm && lastSize >= 2) {
+                    LightLock_Lock(&lk);
+                    free((void*)speechIn);
+                    speechIn = (u8*)pcm; speechInLen = lastSize; speechFirst = true; speechInGen = speechGen;
+                    LightLock_Unlock(&lk);
+                } else free(pcm);
+            }
             bool speakIt = newTurnDone && !firstPoll;
             firstPoll = false;
             if (speakIt && voiceOn && audio_ok()) {     // talk back, piece by piece: she starts on sentence one

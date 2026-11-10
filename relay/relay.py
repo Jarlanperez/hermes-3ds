@@ -397,6 +397,16 @@ class H(http.server.BaseHTTPRequestHandler):
             return self.plain_send(200, fit("\n".join(rows)))
         if path == "/app/v2/hello":   # the name for the HEY <NAME> screen (empty = HELLO)
             return self.plain_send(200, fit(OWNER[:12].upper()))
+        if path == "/app/v2/cue":   # short spoken beat while a photo is studied, in the persona's voice
+            pcm = cue_pcm(job.get("persona", "hermes"))
+            if not pcm:
+                return self.plain_send(204, "")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Length", str(len(pcm)))
+            self.end_headers()
+            self.wfile.write(pcm)
+            return
         if path == "/app/v2/speech":
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             part = int(q["part"][0]) if q.get("part", [""])[0].isdigit() else None
@@ -892,7 +902,27 @@ def doctor():
     except SystemExit:
         print(f"  --    relay not running (python3 relay.py). On the 3DS you'll enter: {lan_ip()}:{PORT}")
 
+# ---------- "let me take a look": spoken the moment a photo turn starts, rendered once ----------
+LOOK_CUE = "Let me take a look."
+cue_cache = {}
+
+def cue_pcm(who="hermes"):
+    if "pcm" not in cue_cache:
+        pcm = speak_raw(LOOK_CUE)
+        if not pcm:
+            return None          # voice server down: try again next time
+        cue_cache["pcm"] = pcm
+    return cue_cache["pcm"]
+
+def _warm_cues():
+    try:
+        cue_pcm()
+    except Exception:
+        pass
+
+
 if __name__ == "__main__":
+    threading.Thread(target=_warm_cues, daemon=True).start()
     cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
     if cmd == "pair":
         if len(sys.argv) < 3:
