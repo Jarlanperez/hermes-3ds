@@ -30,6 +30,9 @@ app/source/screens.c  top and bottom screen drawing, state copy and poses
 app/source/ui.c       fonts, text layout
 app/source/audio.c    talk back playback, LED, voice toggle
 app/source/camera.c   viewfinder capture thread
+app/source/persona.c  persona list (relay + SD art packs), switching, pack loading
+app/tools/build_persona_pack.py   PNG sprites -> SD-card art pack
+personas/             persona folders the relay reads (see personas/README.md)
 app/gfx/              sprite atlases (la8), built by tex3ds
 app/romfs/fonts/      Inter and JetBrains Mono baked to .bcfnt
 relay/relay.py        the relay (Python standard library only)
@@ -37,7 +40,7 @@ relay/relay.py        the relay (Python standard library only)
 
 ## Relay protocol
 
-Plain-text bodies so the 3DS needs no JSON parser. The device token goes in `X-HH-Token`.
+Plain-text bodies so the 3DS needs no JSON parser. The device token goes in `X-HH-Token`, and the active persona id in `X-HH-Persona` (missing or unknown = Hermes).
 
 | Endpoint | |
 |---|---|
@@ -45,6 +48,7 @@ Plain-text bodies so the 3DS needs no JSON parser. The device token goes in `X-H
 | `GET /app/v2/poll` | `state`, job id, kind, elapsed, helpers, tool label, question, approval command, approval description, then the answer; one per line |
 | `GET /app/v2/earlier` | recent turns, `HH:MM \t question \t answer` |
 | `GET /app/v2/hello` | the configured name |
+| `GET /app/v2/personas` | other personas, `id \t name \t greeting` per line |
 | `GET /app/v2/speech?part=N` | reply audio, PCM16 mono 24 kHz; 204 = no more parts |
 | `POST /app/v2/voice` | raw PCM16 mono 16360 Hz from the mic |
 | `POST /app/v2/ask` | typed text |

@@ -11,6 +11,7 @@ Talk to your [Hermes Agent](https://github.com/NousResearch/hermes-agent) from a
 - **Live state screens.** Thinking, writing code, searching the web, making something, sending helpers, needs your approval, low battery and more, each with its own pose.
 - **Approvals.** When Hermes wants to run a command that needs your OK, the 3DS lights up and shows the command. A approves, B denies.
 - **Camera.** Press R for a live viewfinder, snap, then hold A and ask about the photo.
+- **Personas.** Give her a different personality and voice with one text file, then switch with the D-pad. Each persona keeps its own conversation, and can have its own art if you draw some. See [personas/README.md](personas/README.md).
 - **Keyboard, history, new chat.** Y types, the bottom screen lists earlier answers, X starts fresh.
 - **Home Menu app**, 3D depth on the top screen, and the notification LED when a reply is ready.
 
@@ -54,7 +55,8 @@ Then ask: "Set up the Hermes 3DS relay." Later, when the 3DS shows a code, say "
 | X | New chat (or drop a pending photo) |
 | Y | Type a message. On the offline screen: change the relay address |
 | R | Camera viewfinder. A or R snaps |
-| D-pad / circle pad | Page through long replies |
+| D-pad left / right | Switch persona (when you have more than one) |
+| D-pad up / down, circle pad | Page through long replies |
 | SELECT | Voice on or off |
 | START | Exit |
 

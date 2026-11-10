@@ -40,6 +40,17 @@ extern volatile bool alive, sending, asleepFlag;
 extern char server[128], token[64], typed[512];
 extern char helloName[16];              // from the relay config: HEY <NAME> (empty = HELLO)
 bool ask_server(void);                  // keyboard prompt for the relay address, saved to server.txt
+extern volatile int persona;            // who answers: 0 = Hermes (built in), 1.. = personas (persona.c)
+void persona_boot(void);                // scan sdmc:/3ds/hermes/personas/ for art packs, read persona.txt
+void persona_relay(const char* list);   // worker: the relay's persona list (id \t name \t greet per line)
+void persona_sync(void);                // UI thread: merge that list in (once), restore the saved choice
+void persona_set(int p);                // wraps; loads that pack's sheets, saves persona.txt
+void persona_gc(void);                  // free the previous pack's sheets once the GPU is done with them
+int  persona_count(void);
+const char* persona_name(void);         // id sent as X-HH-Persona ("hermes", "pirate", ...)
+const char* persona_display(void);      // "Captain Byte"
+const char* persona_label(void);        // top-left tag, "HERMES" / "CAPTAIN BYTE"
+const char* persona_greet(void);        // toast on switch
 extern u8*  rec;
 extern u32  recLen;
 
@@ -123,6 +134,8 @@ typedef struct {
     bool photo;                         // a photo rides with the next question
     bool photoSending;                  // that photo is still uploading
     char pagelabel[40];
+    bool talking;                       // mouth is moving (type-on or speech playing)
+    u64  now;                           // osGetTime() for this frame (pack animation clock)
     // bottom
     bool micOK, rec, busy, reader;
     float recSec;

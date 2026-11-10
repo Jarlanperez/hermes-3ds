@@ -94,6 +94,7 @@ static int http_req(HTTPC_RequestMethod m, const char* path, const void* body, u
     httpcSetKeepAlive(&c, HTTPC_KEEPALIVE_DISABLED);
     httpcAddRequestHeaderField(&c, "User-Agent", "Hermes-3DS/2.0");
     if (token[0]) httpcAddRequestHeaderField(&c, "X-HH-Token", token);
+    httpcAddRequestHeaderField(&c, "X-HH-Persona", persona_name());
     if (body && len) {
         httpcAddRequestHeaderField(&c, "Content-Type", "application/octet-stream");
         httpcAddPostDataRaw(&c, (const u32*)body, len);
@@ -213,6 +214,10 @@ static bool pair_and_check(void) {
         body[strcspn(body, "\r\n")] = 0;
         snprintf(helloName, sizeof helloName, "%s", body);
     }
+    free(body);
+    body = NULL;
+    if (GET("/app/v2/personas", &body) == 200 && body) persona_relay(body);   // id \t name \t greet per line
+    else persona_relay("");                                                   // older relay: SD packs only
     free(body);
     fetch_earlier();
     return true;

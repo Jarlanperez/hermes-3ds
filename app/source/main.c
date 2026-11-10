@@ -78,6 +78,7 @@ int main(void) {
     httpcInit(0x200000);
     net_boot();
     if (!server[0]) ask_server();        // first run: where is the relay?
+    persona_boot();
     audio_init();
     char ackJob[24] = "";                // LED: the finished turn he has already seen
     bool ledPrimed = false;
@@ -121,6 +122,7 @@ int main(void) {
         memcpy(&s, &sh, sizeof s);
         LightLock_Unlock(&lk);
         bool busy = busy_state(s.state);
+        persona_sync();                                    // the relay's persona list, once it has arrived
         bool asleep = !busy && !recording && now - lastInput > SLEEP_MS;
         if (asleep && kd) { lastInput = now; asleep = false; kd = 0; }   // the waking press does nothing else
         asleepFlag = asleep;
@@ -266,13 +268,28 @@ int main(void) {
         } else if ((kd & KEY_Y) && s.link == LINK_OK && !sending && mode != M_APPROVAL) {
             SwkbdState kb;
             swkbdInit(&kb, SWKBD_TYPE_NORMAL, 2, 500);
-            swkbdSetHintText(&kb, busy ? "Follow up for Hermes" : "Message Hermes");
+            char hint[64];
+            snprintf(hint, sizeof hint, "%s %s", busy ? "Follow up for" : "Message", persona_display());
+            swkbdSetHintText(&kb, hint);
             char buf[512] = "";
             if (swkbdInputText(&kb, buf, sizeof buf) == SWKBD_BUTTON_CONFIRM && buf[0]) {
                 snprintf(typed, sizeof typed, "%s", buf);
                 cmd = CMD_ASK;
                 reader = false;
             }
+        }
+
+        // LEFT/RIGHT: who answers (Hermes or a persona). Switching starts a fresh conversation with them.
+        if ((kd & (KEY_DLEFT | KEY_DRIGHT)) && persona_count() > 1 && s.link == LINK_OK && !busy && !sending &&
+            !recording && !camUp && mode != M_APPROVAL) {
+            persona_set(persona + ((kd & KEY_DRIGHT) ? 1 : -1));
+            audio_stop();
+            cmd = CMD_RESET;
+            reader = false;
+            text[0] = 0; textLen = 0; nlines = 0; page = 0; npages = 1; reveal = 0;
+            seenJob[0] = 0;
+            start = now;                                   // greet as the new persona
+            say(persona_greet());
         }
 
         // SELECT: voice on/off (not while L/Down are held, so the Rosalina screenshot combo doesn't flip it)
@@ -334,6 +351,8 @@ int main(void) {
         v.talk = talkOpen;
         v.blink = blink;
         v.bob = bob;
+        v.talking = typingOn || streaming;
+        v.now = now;
         time_t t = time(NULL);
         struct tm* lt = localtime(&t);
         snprintf(v.clock, sizeof v.clock, "%02d:%02d", lt->tm_hour, lt->tm_min);
@@ -391,6 +410,7 @@ int main(void) {
         C2D_SceneBegin(bot);
         draw_bottom(&v);
         C3D_FrameEnd(0);
+        persona_gc();                                      // last frame is done: a switched-out pack can go
     }
 
     alive = false;

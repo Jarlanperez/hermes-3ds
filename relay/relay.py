@@ -33,6 +33,7 @@ DEFAULTS = {
     "voice_model": "kokoro",
     "voice_name": "af_heart",
     "voice_key": "local",
+    "personas_dir": "",                 # empty: the personas/ folder in this repo (see personas/README.md)
 }
 
 def load_config():
@@ -397,6 +398,9 @@ class H(http.server.BaseHTTPRequestHandler):
             return self.plain_send(200, fit("\n".join(rows)))
         if path == "/app/v2/hello":   # the name for the HEY <NAME> screen (empty = HELLO)
             return self.plain_send(200, fit(OWNER[:12].upper()))
+        if path == "/app/v2/personas":   # who else can answer: id \t display name \t greeting, one per line
+            rows = [f"{k}\t{v['display']}\t{v['greet']}" for k, v in PERSONA_CFG.items() if k != "hermes"]
+            return self.plain_send(200, fit("\n".join(rows[:15])))
         if path == "/app/v2/cue":   # short spoken beat while a photo is studied, in the persona's voice
             pcm = cue_pcm(job.get("persona", "hermes"))
             if not pcm:
@@ -431,7 +435,7 @@ class H(http.server.BaseHTTPRequestHandler):
         if job.get("state") != "done" or not job.get("a"):
             return self.plain_send(204, "")
         key = "%.3f" % job.get("t", 0)
-        e = voice_job(tok, key, job["a"])
+        e = voice_job(tok, key, job["a"], job.get("persona", "hermes"))
         deadline = time.time() + 30
         with e["cv"]:
             want = range(len(e["parts"])) if part is None else [part]
@@ -483,7 +487,8 @@ class H(http.server.BaseHTTPRequestHandler):
             if busy:
                 return self.plain_send(202 if run_id and steer(run_id, text) else 409, "steered")
             with lock:
-                jobs[tok] = {"state": "thinking", "kind": "think", "q": text[:1000], "t": time.time(), "a": ""}
+                jobs[tok] = {"state": "thinking", "kind": "think", "q": text[:1000], "t": time.time(), "a": "",
+                             "persona": persona_of(self)}
             threading.Thread(target=run_turn, args=(tok, text[:1000]), daemon=True).start()
             return self.plain_send(202, "ok")
         if path == "/app/v2/voice":
@@ -491,7 +496,8 @@ class H(http.server.BaseHTTPRequestHandler):
                 threading.Thread(target=voice_steer, args=(tok, run_id, data), daemon=True).start()
                 return self.plain_send(202, "steer")
             with lock:
-                jobs[tok] = {"state": "transcribing", "kind": "think", "q": "", "t": time.time(), "a": ""}
+                jobs[tok] = {"state": "transcribing", "kind": "think", "q": "", "t": time.time(), "a": "",
+                             "persona": persona_of(self)}
             threading.Thread(target=voice2, args=(tok, data), daemon=True).start()
             return self.plain_send(202, "ok")
         if path == "/app/v2/approve":
@@ -505,7 +511,8 @@ class H(http.server.BaseHTTPRequestHandler):
                 return self.plain_send(409, "busy")
             with lock:
                 jobs[tok] = {}
-                devices[tok].pop("session", None)
+                for p in PERSONAS:
+                    devices[tok].pop(skey(p), None)
                 save(devices)
             return self.plain_send(200, "reset")
         if path == "/app/v2/stop":
@@ -543,7 +550,64 @@ def take_photo(token):
         t, img = photos.pop(token, (0, None))
     return img if img and time.time() - t < PHOTO_TTL else None
 
-# ---------- talk back: Kokoro "Heart" on local VoiceStudio ----------
+# ---------- personas: who answers (the 3DS sends X-HH-Persona; no header = Hermes) ----------
+PERSONA_DIR = os.path.expanduser(os.environ.get("HERMES3DS_PERSONAS") or CONF["personas_dir"] or
+                                 os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "personas"))
+
+def _unwrap(t):
+    """Folder text is hard-wrapped for editing; the model gets one paragraph per blank-line block."""
+    return "\n\n".join(" ".join(l.strip() for l in blk.splitlines() if l.strip()) for blk in re.split(r"\n\s*\n", t) if blk.strip())
+
+def load_personas(root=PERSONA_DIR):
+    """Read personas/<id>/ once at startup: persona.md (front matter + personality), knowledge/*.md, voice.json.
+    The instructions are the app rules + personality + knowledge, built here so a turn costs nothing extra."""
+    out = {}
+    for name in sorted(os.listdir(root)) if os.path.isdir(root) else []:
+        d = os.path.join(root, name)
+        pm = os.path.join(d, "persona.md")
+        pid = name.lower()
+        if name.startswith((".", "_")) or not os.path.isfile(pm) or not re.fullmatch(r"[a-z0-9_-]{1,23}", pid):
+            continue
+        raw = open(pm, encoding="utf-8").read()
+        meta, body = {}, raw
+        m = re.match(r"---\n(.*?)\n---\n?(.*)", raw, re.S)
+        if m:
+            body = m.group(2)
+            for line in m.group(1).splitlines():
+                if ":" in line:
+                    k, v = line.split(":", 1); meta[k.strip()] = v.strip()
+        parts = [_unwrap(body)] if body.strip() else []
+        kd = os.path.join(d, "knowledge")
+        for f in sorted(os.listdir(kd)) if os.path.isdir(kd) else []:
+            if f.endswith(".md"):
+                parts.append(_unwrap(open(os.path.join(kd, f), encoding="utf-8").read()))
+        system = APP_SYSTEM.replace("beside the Hermes Girl sprite", "beside " + meta.get("sprite_label", "the Hermes Girl sprite"))
+        if parts:
+            system += " " + " ".join(parts)
+        vf = os.path.join(d, "voice.json")
+        try:
+            voice = json.load(open(vf)) if os.path.isfile(vf) else {}
+        except ValueError:
+            print(f"personas: {vf} is not valid JSON, using the default voice", flush=True)
+            voice = {}
+        display = re.sub(r"[\t\n]", " ", meta.get("display", name))[:23]
+        greet = re.sub(r"[\t\n]", " ", meta.get("greet", ""))[:47]
+        out[pid] = {"display": display, "greet": greet, "system": system, "voice": voice}
+    out["hermes"] = {"display": "Hermes", "greet": "", "system": APP_SYSTEM, "voice": {}}
+    return out
+
+PERSONA_CFG = load_personas()
+PERSONAS = {k: v["system"] for k, v in PERSONA_CFG.items()}
+
+def persona_of(h):
+    p = (h.headers.get("X-HH-Persona", "") or "hermes").strip().lower()
+    return p if p in PERSONAS else "hermes"
+
+def skey(p):
+    """Each persona keeps its own conversation on a device."""
+    return "session" if p == "hermes" else "session_" + p
+
+# ---------- talk back: any OpenAI-compatible TTS server (Kokoro, VoiceStudio) ----------
 VOICE_URL = CONF["voice_url"]
 VOICE_NAME = CONF["voice_name"]
 SPEECH_RATE = 24000          # the 3DS app plays mono PCM16 at this rate
@@ -601,11 +665,17 @@ def to_mono_rate(frames, ch, rate):
 def speak(text):
     return speak_raw(spoken(text))
 
-def speak_raw(t):
-    if not t or not VOICE_URL:
+def speak_as(who, t):
+    """Voice one chunk with the persona's voice.json (voice, and optionally url / model); else the relay default."""
+    vc = PERSONA_CFG.get(who, {}).get("voice", {})
+    return speak_raw(t, vc.get("url") or VOICE_URL, vc.get("voice") or VOICE_NAME, vc.get("model") or CONF["voice_model"])
+
+def speak_raw(t, url=None, voice=None, model=None):
+    url = url or VOICE_URL
+    if not t or not url:
         return None
-    body = json.dumps({"model": CONF["voice_model"], "voice": VOICE_NAME, "input": t, "response_format": "wav"}).encode()
-    req = urllib.request.Request(VOICE_URL, body, {"Authorization": f"Bearer {CONF['voice_key']}", "Content-Type": "application/json"})
+    body = json.dumps({"model": model or CONF["voice_model"], "voice": voice or VOICE_NAME, "input": t, "response_format": "wav"}).encode()
+    req = urllib.request.Request(url, body, {"Authorization": f"Bearer {CONF['voice_key']}", "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             data = r.read()
@@ -728,8 +798,9 @@ def run_turn(token, q):
     """Start a /v1/runs turn for this device and mirror its event stream into jobs[token]."""
     with lock:
         dev = devices[token]
-        session = dev.get("session")
-    body = {"input": q, "instructions": APP_SYSTEM}   # no "model": the API server would pass it to the provider as a real id
+        who = (jobs.get(token) or {}).get("persona", "hermes")
+        session = dev.get(skey(who))
+    body = {"input": q, "instructions": PERSONAS.get(who, APP_SYSTEM)}   # no "model": the API server would pass it to the provider as a real id
     body["model_options"] = {"reasoning": {"effort": HANDHELD_REASONING}}   # handheld turns are short: low reasoning ~halves latency
     png = take_photo(token)
     print(f"PHOTO {'attached ' + str(len(png[1])) + ' bytes' if png else 'none'} for: {q[:50]}", flush=True)
@@ -798,7 +869,7 @@ def run_turn(token, q):
     _, status = hermes_call("GET", f"{RUNS}/{run_id}")
     with lock:
         if status.get("session_id"):
-            devices[token]["session"] = status["session_id"]
+            devices[token][skey(who)] = status["session_id"]
         j = jobs.setdefault(token, {})
         if name == "run.completed":
             a = plain(final.get("output") or j.get("a") or "(no reply)")
@@ -815,24 +886,25 @@ def run_turn(token, q):
         devices[token]["history"] = devices[token]["history"][-20:]
         save(devices)
         key, said = "%.3f" % j.get("t", 0), j.get("a", "")
+        j["persona"] = who
     if name == "run.completed":   # voice it now, so the 3DS fetch is instant
-        threading.Thread(target=_prewarm, args=(token, key, said), daemon=True).start()
+        threading.Thread(target=_prewarm, args=(token, key, said, who), daemon=True).start()
 
-def voice_job(token, key, text):
+def voice_job(token, key, text, who="hermes"):
     """Start (once per reply) voicing the reply chunk by chunk; returns the shared entry."""
     with speech_lock:
         e = speech_cache.get(token)
         if e and e["key"] == key:
             return e
         parts = chunks(text)
-        e = {"key": key, "texts": parts, "parts": [None] * len(parts), "failed": False, "cv": threading.Condition()}
+        e = {"who": who, "key": key, "texts": parts, "parts": [None] * len(parts), "failed": False, "cv": threading.Condition()}
         speech_cache[token] = e
     threading.Thread(target=_voice_run, args=(token, e), daemon=True).start()
     return e
 
 def _voice_run(token, e):
     for i, t in enumerate(e["texts"]):
-        pcm = speak_raw(t)
+        pcm = speak_as(e.get("who", "hermes"), t)
         with e["cv"]:
             if pcm is None:
                 e["failed"] = True; e["cv"].notify_all(); return
@@ -842,8 +914,8 @@ def _voice_run(token, e):
             mark(token, "voice1")
     mark(token, "voice")
 
-def _prewarm(token, key, text):
-    e = voice_job(token, key, text)
+def _prewarm(token, key, text, who="hermes"):
+    e = voice_job(token, key, text, who)
     deadline = time.time() + 60
     with e["cv"]:
         while time.time() < deadline and not e["failed"] and any(x is None for x in e["parts"]):
@@ -904,23 +976,25 @@ def doctor():
     except SystemExit:
         print(f"  --    relay not running (python3 relay.py). On the 3DS you'll enter: {lan_ip()}:{PORT}")
 
-# ---------- "let me take a look": spoken the moment a photo turn starts, rendered once ----------
+# ---------- "let me take a look": spoken the moment a photo turn starts, cached per persona ----------
 LOOK_CUE = "Let me take a look."
 cue_cache = {}
 
 def cue_pcm(who="hermes"):
-    if "pcm" not in cue_cache:
-        pcm = speak_raw(LOOK_CUE)
+    if who not in cue_cache:
+        line = PERSONA_CFG.get(who, {}).get("voice", {}).get("look_cue") or LOOK_CUE
+        pcm = speak_as(who, line)
         if not pcm:
             return None          # voice server down: try again next time
-        cue_cache["pcm"] = pcm
-    return cue_cache["pcm"]
+        cue_cache[who] = pcm
+    return cue_cache[who]
 
 def _warm_cues():
-    try:
-        cue_pcm()
-    except Exception:
-        pass
+    for who in PERSONA_CFG:
+        try:
+            cue_pcm(who)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
@@ -944,5 +1018,7 @@ if __name__ == "__main__":
     KEY = api_key()
     os.makedirs(DIR, exist_ok=True)
     os.chmod(DIR, 0o700)
+    others = [f"{v['display']} ({k})" for k, v in PERSONA_CFG.items() if k != "hermes"]
+    print(f"personas: Hermes" + "".join(", " + o for o in others) + f"  [{PERSONA_DIR}]", flush=True)
     print(f"Hermes 3DS relay on port {PORT}. On the 3DS enter: {lan_ip()}:{PORT}", flush=True)
     S(("0.0.0.0", PORT), H).serve_forever()
