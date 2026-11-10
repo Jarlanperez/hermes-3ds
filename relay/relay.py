@@ -622,6 +622,7 @@ def speak_raw(t):
 
 # ---------- v2 run driver ----------
 RUNS = HERMES_BASE + "/v1/runs"
+HANDHELD_REASONING = os.environ.get("HANDHELD_REASONING", "low")
 BUSY = ("transcribing", "thinking", "working", "approval", "replying")
 CODING = {"terminal", "execute_code", "patch", "write_file", "read_file", "search_files", "process", "process_manage"}
 MAKING = {"image_generate", "text_to_speech", "video_generate", "music_generate"}
@@ -729,13 +730,14 @@ def run_turn(token, q):
         dev = devices[token]
         session = dev.get("session")
     body = {"input": q, "instructions": APP_SYSTEM}   # no "model": the API server would pass it to the provider as a real id
+    body["model_options"] = {"reasoning": {"effort": HANDHELD_REASONING}}   # handheld turns are short: low reasoning ~halves latency
     png = take_photo(token)
     print(f"PHOTO {'attached ' + str(len(png[1])) + ' bytes' if png else 'none'} for: {q[:50]}", flush=True)
     if png:   # they snapped a photo first: send it with this question
         note = q + "\n\n(Attached: a photo they just took with the 3DS outer camera, 0.1 MP, often dim or soft.)"
         body["input"] = [{"role": "user", "content": [
-            {"type": "input_text", "text": note},
-            {"type": "input_image", "image_url": "data:" + png[0] + ";base64," + base64.b64encode(png[1]).decode()}]}]
+            {"type": "text", "text": note},
+            {"type": "image_url", "image_url": {"url": "data:" + png[0] + ";base64," + base64.b64encode(png[1]).decode()}}]}]
         _job(token, q="(photo) " + q[:990])
     if session:
         body["session_id"] = session
