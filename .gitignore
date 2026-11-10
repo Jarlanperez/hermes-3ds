@@ -5,7 +5,7 @@ app/build/
 *.elf
 *.smdh
 *.map
-cia/banner.bnr
-cia/icon.smdh
+app/cia/banner.bnr
+app/cia/icon.smdh
 __pycache__/
 *.pyc
