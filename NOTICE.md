@@ -4,7 +4,7 @@
 
 Hermes Girl is a character by [Nous Research](https://nousresearch.com). The sprite artwork in `app/gfx/hg/`, `app/cia/` and `docs/states.png` depicts her and is **not** covered by this repo's MIT license. All rights in the character belong to Nous Research.
 
-[PENDING: permission status from Nous Research, and the exact terms, before this repo goes public.]
+Used in this project with permission from Nous Research (2026-11). That permission covers this repo; forks that reuse the artwork should ask Nous Research themselves.
 
 ## Fonts
 

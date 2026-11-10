@@ -40,7 +40,7 @@ Full guide, including local Whisper and voice: [docs/SETUP.md](docs/SETUP.md).
 `skill/hermes-3ds/SKILL.md` is a Hermes skill that walks your agent through setup, pairing and troubleshooting. Install it with:
 
 ```
-hermes skills install https://raw.githubusercontent.com/<owner>/hermes-3ds/main/skill/hermes-3ds/SKILL.md
+hermes skills install https://raw.githubusercontent.com/Jarlanperez/hermes-3ds/main/skill/hermes-3ds/SKILL.md
 ```
 
 Then ask: "Set up the Hermes 3DS relay." Later, when the 3DS shows a code, say "Pair my 3DS, the code is HHDM."
