@@ -48,8 +48,8 @@ void persona_set(int p);                // wraps; loads that pack's sheets, save
 void persona_gc(void);                  // free the previous pack's sheets once the GPU is done with them
 int  persona_count(void);
 const char* persona_name(void);         // id sent as X-HH-Persona ("hermes", "pirate", ...)
-const char* persona_display(void);      // "Captain Byte"
-const char* persona_label(void);        // top-left tag, "HERMES" / "CAPTAIN BYTE"
+const char* persona_display(void);      // "Pip"
+const char* persona_label(void);        // top-left tag, "HERMES" / "PIP"
 const char* persona_greet(void);        // toast on switch
 extern u8*  rec;
 extern u32  recLen;

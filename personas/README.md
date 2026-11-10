@@ -5,8 +5,8 @@ Hermes, tools and memory underneath. On the 3DS, D-pad left and right switch bet
 Switching starts a fresh conversation with them.
 
 Each folder here is one persona. The relay reads them when it starts, so restart the relay after adding or
-editing one. Folders starting with `_` are ignored; `_template` is the starting point and `captain` is a small
-working example.
+editing one. Folders starting with `_` are ignored; `_template` is the starting point and `pip`, a happy little
+robot, is a working example.
 
 ## Make one in a few minutes (no art needed)
 
@@ -42,11 +42,11 @@ the agent gets is the app's own rules (short replies, plain text, the small scre
 ### voice.json
 
 ```json
-{ "voice": "bm_george", "look_cue": "Let me have a look, sailor." }
+{ "voice": "am_puck", "look_cue": "Ooh, let me take a look!" }
 ```
 
 - `voice`: a voice name your TTS server knows. Kokoro has many (`af_heart`, `af_bella`, `am_adam`,
-  `bm_george`, ...).
+  `am_puck`, ...).
 - `url`, `model`: a different OpenAI-compatible `/v1/audio/speech` server for this persona only.
 - `look_cue`: the line spoken while a photo is being studied. Default: "Let me take a look."
 
@@ -83,7 +83,7 @@ think coding research making delegate approval reply done error looking battery.
 Hermes default.
 
 ```
-head.hello=AHOY,|SAILOR
-sub.think=Plotting a course · {t}
+head.hello=HI,|FRIEND
+sub.think=Processing · {t}
 pose.research=think
 ```
