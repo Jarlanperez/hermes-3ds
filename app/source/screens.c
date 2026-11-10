@@ -154,7 +154,7 @@ static void draw_viewfinder(const View* v, const char* label) {
 void draw_top(const View* v) {
     if (v->cam) { draw_viewfinder(v, "A SNAP  \xC2\xB7  B CANCEL"); return; }
     if (v->photo && !v->reader && cam_has_frame()) {   // the shot he is about to ask about
-        draw_viewfinder(v, v->rec ? "LISTENING  \xC2\xB7  LET GO TO SEND" : "PHOTO READY  \xC2\xB7  HOLD A AND ASK");
+        draw_viewfinder(v, v->rec ? "LISTENING  \xC2\xB7  LET GO TO SEND" : v->photoSending ? "SENDING PHOTO  \xC2\xB7  HOLD A AND ASK" : "PHOTO READY  \xC2\xB7  HOLD A AND ASK");
         return;
     }
     Look L = look(v->mode);

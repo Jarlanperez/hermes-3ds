@@ -1,12 +1,14 @@
 // Network worker: pairing, relay v2 polling (/app/v2/poll, /app/v2/earlier) and the UI's requests
 // (voice, typed text, approve/deny, stop). Plain-text bodies only; the relay does the JSON.
 #include "app.h"
+#include <turbojpeg.h>
 #include <sys/stat.h>
 
 Shared sh;
 LightLock lk;
 volatile int  cmd = CMD_NONE;
 volatile bool photoReady = false;
+volatile bool photoSending = false;
 volatile bool alive = true, sending = false, asleepFlag = false;
 char server[128] = "";                 // sdmc:/3ds/hermes/server.txt, set on first run
 char helloName[16] = "";
@@ -260,6 +262,44 @@ static void do_cmd(int w) {
     }
 }
 
+// ---------- photo upload: JPEG on the 3DS (~15-25 KB instead of 192 KB raw), sent before any question ----------
+static u8* jpg = NULL;
+static unsigned long jpgLen = 0;
+
+static bool encode_photo(void) {
+    u8* rgb = malloc(400 * 240 * 3);
+    if (!rgb) return false;
+    const u16* px = (const u16*)photo;
+    for (int i = 0; i < 400 * 240; i++) {
+        u16 v = px[i];
+        u8 r = (v >> 11) & 31, g = (v >> 5) & 63, b = v & 31;
+        rgb[i * 3] = (r << 3) | (r >> 2); rgb[i * 3 + 1] = (g << 2) | (g >> 4); rgb[i * 3 + 2] = (b << 3) | (b >> 2);
+    }
+    bool ok = false;
+    tjhandle h = tjInitCompress();
+    if (h) {
+        if (jpg) { tjFree(jpg); jpg = NULL; }
+        jpgLen = 0;
+        ok = tjCompress2(h, rgb, 400, 0, 240, TJPF_RGB, &jpg, &jpgLen, TJSAMP_420, 85, TJFLAG_FASTDCT) == 0 && jpgLen > 0;
+        tjDestroy(h);
+    }
+    free(rgb);
+    return ok;
+}
+
+// The worker runs this before any queued question, so a question asked while the photo is still on its way
+// waits for it instead of going out alone (the old single cmd slot let the question overwrite the photo).
+static void send_photo(void) {
+    char* body = NULL;
+    int c = encode_photo() ? POST("/app/v2/photo", jpg, (u32)jpgLen, &body)
+                           : POST("/app/v2/photo", photo, photoLen, &body);
+    free(body);
+    photoSending = false;
+    if (c == 403) { token[0] = 0; remove(DIRP "/token.txt"); set_link(LINK_PAIR); return; }
+    photoReady = c == 200;
+    say(c == 200 ? "Photo ready. Hold A and ask about it." : "Photo didn't send. Snap it again.");
+}
+
 void worker(void* arg) {
     (void)arg;
     bool ready = false;
@@ -269,6 +309,7 @@ void worker(void* arg) {
     bool firstPoll = true;              // a turn already done at launch is not spoken again
     while (alive) {
         if (!ready) { ready = pair_and_check(); continue; }
+        if (photoSending) { send_photo(); nextPoll = 0; if (!token[0]) { ready = false; continue; } }
         int w = cmd;
         if (w) { cmd = CMD_NONE; do_cmd(w); nextPoll = 0; if (!token[0]) { ready = false; continue; } }
         u64 now = osGetTime();

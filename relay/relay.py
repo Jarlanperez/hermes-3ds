@@ -450,15 +450,22 @@ class H(http.server.BaseHTTPRequestHandler):
             if not data:
                 with lock:
                     photos.pop(tok, None)
+                print("PHOTO dropped", flush=True)
                 return self.plain_send(200, "dropped")
-            if len(data) != PHOTO_W * PHOTO_H * 2:
+            if data[:2] == b"\xff\xd8" and len(data) < 2_000_000:   # v2.8.1+/v2.6+: JPEG encoded on the 3DS
+                img = ("image/jpeg", data)
+            elif len(data) == PHOTO_W * PHOTO_H * 2:              # older apps: raw RGB565
+                try:
+                    img = ("image/png", rgb565_png(data))
+                except Exception:
+                    print("PHOTO encode failed", flush=True)
+                    return self.plain_send(500, "encode failed")
+            else:
+                print(f"PHOTO bad size {len(data)}", flush=True)
                 return self.plain_send(400, "bad size")
-            try:
-                png = rgb565_png(data)
-            except Exception:
-                return self.plain_send(500, "encode failed")
             with lock:
-                photos[tok] = (time.time(), png)
+                photos[tok] = (time.time(), img)
+            print(f"PHOTO stored {img[0]} {len(img[1])} bytes", flush=True)
             return self.plain_send(200, "ok")
         if path == "/app/v2/ask":
             if not text:
@@ -523,8 +530,8 @@ def rgb565_png(raw):
 
 def take_photo(token):
     with lock:
-        t, png = photos.pop(token, (0, None))
-    return png if png and time.time() - t < PHOTO_TTL else None
+        t, img = photos.pop(token, (0, None))
+    return img if img and time.time() - t < PHOTO_TTL else None
 
 # ---------- talk back: Kokoro "Heart" on local VoiceStudio ----------
 VOICE_URL = CONF["voice_url"]
@@ -713,11 +720,12 @@ def run_turn(token, q):
         session = dev.get("session")
     body = {"input": q, "instructions": APP_SYSTEM}   # no "model": the API server would pass it to the provider as a real id
     png = take_photo(token)
+    print(f"PHOTO {'attached ' + str(len(png[1])) + ' bytes' if png else 'none'} for: {q[:50]}", flush=True)
     if png:   # they snapped a photo first: send it with this question
         note = q + "\n\n(Attached: a photo they just took with the 3DS outer camera, 0.1 MP, often dim or soft.)"
         body["input"] = [{"role": "user", "content": [
             {"type": "input_text", "text": note},
-            {"type": "input_image", "image_url": "data:image/png;base64," + base64.b64encode(png).decode()}]}]
+            {"type": "input_image", "image_url": "data:" + png[0] + ";base64," + base64.b64encode(png[1]).decode()}]}]
         _job(token, q="(photo) " + q[:990])
     if session:
         body["session_id"] = session

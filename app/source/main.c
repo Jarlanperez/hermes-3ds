@@ -100,6 +100,8 @@ int main(void) {
     bool camUp = false;                  // viewfinder showing (R held past CAM_HOLD_MS)
     u64 rAt = 0;                         // when R went down (0 = not held)
     bool aLock = false;                  // A snapped a photo: ignore it until released
+    bool snapWant = false;               // A/R pressed, waiting for the first camera frame
+    u64 snapAt = 0;
     u64 start = osGetTime(), lastInput = start, blinkAt = start + 2500, talkFlip = 0, padAt = 0;
     static Shared s;
     View v;
@@ -156,19 +158,26 @@ int main(void) {
         // The viewfinder stays up once open: frame the shot, then A (or R) snaps, B cancels.
         if (camUp) {
             cam_pump();
-            if (kd & (KEY_A | KEY_R)) {
-                bool ok = cam_snap();
+            // A/R asks for a snap; it fires on the first frame, so snapping right after opening still works
+            if (kd & (KEY_A | KEY_R)) { if (!snapWant) snapAt = now; snapWant = true; }
+            if (kd & KEY_A) aLock = true;                  // the snapping press must not start push to talk
+            if (snapWant && cam_snap()) {
+                snapWant = false;
                 cam_stop();
                 camUp = false;
-                if (kd & KEY_A) aLock = true;              // the snapping press must not start push to talk
-                if (ok) cmd = CMD_PHOTO; else say("No picture yet. Give it a second.");
+                photoReady = false;
+                photoSending = true;                       // preview now; the worker uploads it before any question
             } else if (kd & KEY_B) {
+                snapWant = false;
                 cam_stop();
                 camUp = false;
                 say("Camera closed.");
+            } else if (snapWant && now - snapAt > 3000) {
+                snapWant = false;
+                say("No picture yet. Give it a second.");
             }
             kd = 0;                                        // nothing else reacts while the viewfinder is up
-        } else if ((kd & KEY_R) && !recording && !sending && s.link == LINK_OK && mode != M_APPROVAL) {
+        } else if ((kd & KEY_R) && !recording && !sending && !photoSending && s.link == LINK_OK && mode != M_APPROVAL) {
             // one press of R opens the viewfinder; it stays live until A/R snaps or B closes it
             if (busy) say("Still working. Snap when she's done.");
             else if (cam_start()) { camUp = true; audio_stop(); reader = false; }
@@ -236,7 +245,8 @@ int main(void) {
         }
 
         // X: finish this conversation. Clears the screen back to the greeting and the next turn starts fresh.
-        if ((kd & KEY_X) && photoReady && !busy && !sending && !camUp) {
+        if ((kd & KEY_X) && (photoReady || photoSending) && !busy && !sending && !camUp) {
+            photoSending = false;
             cmd = CMD_UNPHOTO;                             // first X drops a pending photo
         } else if ((kd & KEY_X) && s.link == LINK_OK && !sending && !recording && mode != M_APPROVAL && !camUp) {
             if (busy) say("Still working. B stops it first.");
@@ -350,7 +360,8 @@ int main(void) {
             else if (reader) snprintf(v.pagelabel, sizeof v.pagelabel, "EARLIER");
         }
         v.cam = camUp;
-        v.photo = photoReady && !busy;
+        v.photo = (photoReady || photoSending) && !busy;
+        v.photoSending = photoSending;
         v.micOK = micOK;
         v.rec = recording;
         v.recSec = recLen / (RATE * 2.0f);

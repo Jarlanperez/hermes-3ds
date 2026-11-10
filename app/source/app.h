@@ -67,6 +67,7 @@ void led_set(int kind);
 // ---------- camera (camera.c) ----------
 extern u8*  photo;                      // snapped frame, 400x240 RGB565, uploaded by CMD_PHOTO
 extern u32  photoLen;
+extern volatile bool photoSending;       // snapped, waiting for or in upload
 extern volatile bool photoReady;        // the relay holds a photo for his next question
 bool cam_start(void);
 void cam_pump(void);
@@ -120,6 +121,7 @@ typedef struct {
     float eye;                          // 3D: -1 left / +1 right, times the slider (0 = flat)
     bool cam;                           // viewfinder up (hold R)
     bool photo;                         // a photo rides with the next question
+    bool photoSending;                  // that photo is still uploading
     char pagelabel[40];
     // bottom
     bool micOK, rec, busy, reader;
