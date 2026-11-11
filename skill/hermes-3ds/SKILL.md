@@ -1,7 +1,7 @@
 ---
 name: hermes-3ds
 description: "Use when setting up, pairing or fixing the Hermes 3DS app and relay."
-version: 1.0.0
+version: 1.1.0
 author: Hermes 3DS contributors
 license: MIT
 platforms: [macos, linux]
@@ -37,6 +37,15 @@ Work through these in order, checking each before moving on. Ask before editing 
 5. **Check.** Run `python3 relay/relay.py doctor`. Fix every FAIL line before going on.
 6. **Run.** Start `python3 relay/relay.py` in the background. On macOS, offer `sh relay/install-macos.sh` so it survives restarts (the user may need to run it themselves). Give the user the address the relay prints, for the 3DS.
 7. **3DS.** Point them to the Releases page: the `.cia` installs with FBI (SD → file → Install CIA), or the `.3dsx` goes in `sd:/3ds/`. Then pair as above.
+
+## Personas
+
+Personas live in `<repo>/personas/<id>/` (see `personas/README.md` there). The relay reads them at startup.
+
+- **Make one:** copy `personas/_template` to a new lowercase folder name, write `persona.md` (front matter `display`, `greet`, then a short paragraph on how they talk) and `voice.json` (a voice your TTS server knows, optional `speed` 0.5 to 2.0). Keep the personality short: it is sent with every message. Ask the user before picking a voice; offer to play samples if a voice server is running.
+- **Apply:** restart the relay, then the user restarts the app and presses right on the D-pad. Without art the persona uses the Hermes Girl sprites with its own label.
+- **Art (optional):** 400×240 transparent PNGs in `sprites/stills/` (and optional `sprites/frames/`), built with `python3 app/tools/build_persona_pack.py personas/<id> <SD>/3ds/hermes/personas/<id>` (needs Docker, Pillow, NumPy). Pip's ready-made pack is `pip-sd-pack.zip` on the Releases page.
+- **Persona missing on the 3DS:** relay not restarted, folder name starts with `_` or has invalid characters, or the app was opened before the relay restarted.
 
 ## Troubleshooting
 

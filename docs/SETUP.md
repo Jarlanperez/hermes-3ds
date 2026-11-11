@@ -73,6 +73,8 @@ From [Releases](../../releases):
 - **Home Menu:** copy `hermes-3ds.cia` to the SD card, then open FBI → SD → the file → **Install CIA**.
 - **Homebrew Launcher:** copy `hermes-3ds.3dsx` to `sd:/3ds/`.
 
+Optional: unzip `pip-sd-pack.zip` from the same Releases page onto the root of the SD card for Pip's art. Personas are covered in [personas/README.md](../personas/README.md).
+
 ## 6. Pair
 
 1. Open the app. The first time, it asks for the relay address. Type what the relay printed.

@@ -11,7 +11,7 @@ Talk to your [Hermes Agent](https://github.com/NousResearch/hermes-agent) from a
 - **Live state screens.** Thinking, writing code, searching the web, making something, sending helpers, needs your approval, low battery and more, each with its own pose.
 - **Approvals.** When Hermes wants to run a command that needs your OK, the 3DS lights up and shows the command. A approves, B denies.
 - **Camera.** Press R for a live viewfinder, snap, then hold A and ask about the photo.
-- **Personas.** Give her a different personality and voice with one text file, then switch with the D-pad. Each persona keeps its own conversation, and can have its own art if you draw some. See [personas/README.md](personas/README.md).
+- **Personas.** Give her a different personality and voice with one text file, then switch with the D-pad. Each persona keeps its own conversation, and can have its own art, animation and screen text. Comes with **Pip**, a small floating TV robot with full art, as a working example. See [Personas](#personas).
 - **Keyboard, history, new chat.** Y types, the bottom screen lists earlier answers, X starts fresh.
 - **Home Menu app**, 3D depth on the top screen, and the notification LED when a reply is ready.
 
@@ -36,6 +36,8 @@ You need a 3DS with homebrew ([3ds.hacks.guide](https://3ds.hacks.guide)), Herme
 
 Full guide, including local Whisper and voice: [docs/SETUP.md](docs/SETUP.md).
 
+**Optional, Pip's art:** unzip `pip-sd-pack.zip` from Releases onto the root of your SD card (it lands in `sd:/3ds/hermes/personas/pip/`). Without it Pip still works, using the Hermes Girl sprites with his name.
+
 ### Let Hermes set it up for you
 
 `skill/hermes-3ds/SKILL.md` is a Hermes skill that walks your agent through setup, pairing and troubleshooting. Install it with:
@@ -45,6 +47,16 @@ hermes skills install https://raw.githubusercontent.com/Jarlanperez/hermes-3ds/m
 ```
 
 Then ask: "Set up the Hermes 3DS relay." Later, when the 3DS shows a code, say "Pair my 3DS, the code is HHDM."
+
+## Personas
+
+A persona is someone else answering on your 3DS: their own personality, voice and conversation, with the same Hermes, tools and memory underneath. Press D-pad left or right to switch.
+
+- **Pip** ships in `personas/pip/`: a cheerful little floating TV robot with a calm voice, 9 poses, blinks, a talking screen face, a hover bob and animated exhaust.
+- **Make your own** in a few minutes: copy `personas/_template`, write how they talk in `persona.md`, pick a voice in `voice.json`, restart the relay. No art needed.
+- **Add art** if you like: 400×240 PNGs per pose, built into an SD-card pack with `app/tools/build_persona_pack.py`.
+
+Full guide: [personas/README.md](personas/README.md). If you installed the skill, you can also ask Hermes to make one: "Make me a 3DS persona who talks like a ship's cat."
 
 ## Controls
 
@@ -73,10 +85,11 @@ See [docs/BUILD.md](docs/BUILD.md). Short version: devkitPro with `3ds-dev`, the
 ## Credits
 
 - [Hermes Agent](https://github.com/NousResearch/hermes-agent) and the Hermes Girl character by [Nous Research](https://nousresearch.com). This is a fan project, not an official Nous Research app.
+- Pip is an original character made for this project; his art is MIT like the code.
 - [libctru](https://github.com/devkitPro/libctru) and [citro2d](https://github.com/devkitPro/citro2d) by devkitPro.
 - [Whisper](https://github.com/openai/whisper) / [faster-whisper](https://github.com/SYSTRAN/faster-whisper), [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M).
 - Fonts: [Inter](https://rsms.me/inter/) and [JetBrains Mono](https://www.jetbrains.com/lp/mono/), SIL Open Font License.
 
 ## License
 
-Code: MIT (see `LICENSE`). Hermes Girl artwork: see `NOTICE.md`.
+Code and Pip's art: MIT (see `LICENSE`). Hermes Girl artwork: see `NOTICE.md`.

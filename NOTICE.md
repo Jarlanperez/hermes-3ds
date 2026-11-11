@@ -6,6 +6,10 @@ Hermes Girl is a character by [Nous Research](https://nousresearch.com). The spr
 
 Used in this project with permission from Nous Research (2026-11). That permission covers this repo; forks that reuse the artwork should ask Nous Research themselves.
 
+## Pip artwork
+
+Pip (`personas/pip/`) is an original character made for this project. His sprites are covered by the repo's MIT license, so you can reuse or remix them.
+
 ## Fonts
 
 `app/romfs/fonts/` contains bitmap versions of Inter (© The Inter Project Authors) and JetBrains Mono (© The JetBrains Mono Project Authors), both under the SIL Open Font License 1.1. License texts are in `app/fonts-licenses/`.
