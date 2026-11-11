@@ -297,10 +297,17 @@ void draw_top(const View* v) {
         id = L.blink;
     }
     int dx = (v->mode == M_REPLY && v->slide) ? v->slide : 0;   // step aside for the art, off the right edge
-    sprite_x(id, dx, v->bob);
+    int dy = v->bob;
+    if (CU && PK->hover && id != PO_ASLEEP) {   // floating figure: slow bob, looping fx (exhaust) underneath
+        dy += (int)lroundf(PK->hover * sinf((float)(v->now % 1800) * 6.2831853f / 1800.0f));
+        int fx[4], nfx = 0;
+        for (int f = FR_FX0; f <= FR_FX3; f++) if (HAS(f)) fx[nfx++] = f;
+        if (nfx) overlay(fx[(v->now / 120) % nfx], dx, dy);
+    }
+    sprite_x(id, dx, dy);
     if (CU) {
         int ov[3], n = pack_anim(v, id, ov);
-        for (int i = 0; i < n; i++) overlay(ov[i], dx, v->bob);
+        for (int i = 0; i < n; i++) overlay(ov[i], dx, dy);
     }
 
     // the clock always sits above her hair

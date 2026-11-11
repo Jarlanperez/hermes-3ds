@@ -1,0 +1,10 @@
+# Pip's screen copy and motion (see personas/README.md). Anything left out uses the Hermes default.
+hover=3
+head.hello=HI,|FRIEND
+head.ready=HI,|FRIEND
+head.think=PROCESSING
+head.research=LOOKING|IT UP
+head.coding=WRITING|CODE
+head.asleep=POWER|SAVING
+head.error=UH OH
+head.battery=LOW|BATTERY

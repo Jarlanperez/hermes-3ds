@@ -27,10 +27,11 @@ FALLBACK = {"listen": "hello", "think": "hello", "code": "think", "reply": "hell
             "attention": "hello", "error": "attention", "battery": "hello"}
 ROLES = [p + "_blink" for p in POSES] + ["reply_talk", "reply_closed", "code_type", "code_wipe_a", "code_wipe_b",
                                        "asleep_snore", "battery_chew"]
+FX = ["fx_0", "fx_1", "fx_2", "fx_3"]             # optional looping layer drawn UNDER the figure (exhaust, glow)
 ROLE_POSE = {r: (r[:-6] if r.endswith("_blink") else r.split("_")[0]) for r in ROLES}
 DARK = {"attention", "error", "battery"}
 PAPER, FIELD, INK = (0xF2, 0xEF, 0xE8), (0x14, 0x14, 0x14), (0x1A, 0x1A, 0x1A)
-SCREEN_KEYS = re.compile(r"^(name|label|label_w|greet|head\.\w+|sub\.\w+|pose\.\w+)$")
+SCREEN_KEYS = re.compile(r"^(name|label|label_w|hover|greet|head\.\w+|sub\.\w+|pose\.\w+)$")
 SHEET_BUDGET = 900_000          # px per atlas before we start a new sheet (1024x1024 max)
 
 
@@ -150,6 +151,18 @@ def build(src, out):
         Image.fromarray(o[y0:y1, x0:x1].astype(np.uint8), "RGBA").save(os.path.join(work, f"a_{role}.png"))
         anims.append((role, int(x0), int(y0)))
         items.append(("a_" + role, int((x1 - x0) * (y1 - y0))))
+
+    for role in FX:                                  # fx: kept as drawn (transparent), cropped to their pixels
+        path = os.path.join(fd, role + ".png")
+        if not os.path.isfile(path):
+            continue
+        im = load400(path)
+        bb = im.getchannel("A").point(lambda v: 255 if v > 4 else 0).getbbox()
+        if not bb:
+            continue
+        im.crop(bb).save(os.path.join(work, f"a_{role}.png"))
+        anims.append((role, bb[0], bb[1]))
+        items.append(("a_" + role, (bb[2] - bb[0]) * (bb[3] - bb[1])))
 
     # pack into as few atlases as fit; split a sheet in half if tex3ds can't place it
     groups, cur, used = [], [], 0

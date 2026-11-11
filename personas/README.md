@@ -6,7 +6,7 @@ Switching starts a fresh conversation with them.
 
 Each folder here is one persona. The relay reads them when it starts, so restart the relay after adding or
 editing one. Folders starting with `_` are ignored; `_template` is the starting point and `pip`, a happy little
-robot, is a working example.
+floating robot, is a full working example with art.
 
 ## Make one in a few minutes (no art needed)
 
@@ -58,7 +58,8 @@ background (the figure sits on the right, the text runs to its left).
 ```
 personas/<id>/sprites/stills/<pose>.png    hello listen think code reply asleep attention error battery
 personas/<id>/sprites/frames/<role>.png    optional animation: <pose>_blink, reply_talk, reply_closed,
-                                           code_type, code_wipe_a, code_wipe_b, asleep_snore, battery_chew
+                                           code_type, code_wipe_a, code_wipe_b, asleep_snore, battery_chew,
+                                           fx_0..fx_3 (a looping layer under the figure, like exhaust)
 personas/<id>/screen.txt                   optional screen copy, see below
 ```
 
@@ -77,12 +78,14 @@ up, but answers as Hermes.
 
 ### screen.txt
 
-`key=value` lines. Keys: `name`, `label`, `label_w` (px), `greet`, `head.<mode>` (up to 3 lines split by `|`),
+`key=value` lines. Keys: `name`, `label`, `label_w` (px), `hover` (px the figure floats up and down, 0 to 8;
+not while asleep), `greet`, `head.<mode>` (up to 3 lines split by `|`),
 `sub.<mode>` (`{t}` = time on this turn), `pose.<mode>`. Modes: boot offline pair hello ready asleep listen
 think coding research making delegate approval reply done error looking battery. Anything left out uses the
 Hermes default.
 
 ```
+hover=3
 head.hello=HI,|FRIEND
 sub.think=Processing · {t}
 pose.research=think

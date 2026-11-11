@@ -31,7 +31,7 @@ static const char* POSE_NAME[PO_COUNT] = {"hello", "listen", "think", "code", "r
 static const char* FRAME_NAME[FR_COUNT] = {"hello_blink", "listen_blink", "think_blink", "code_blink", "reply_blink",
                                            "asleep_blink", "attention_blink", "error_blink", "battery_blink",
                                            "reply_talk", "reply_closed", "code_type", "code_wipe_a", "code_wipe_b",
-                                           "asleep_snore", "battery_chew"};
+                                           "asleep_snore", "battery_chew", "fx_0", "fx_1", "fx_2", "fx_3"};
 static const char* MODE_NAME[M_COUNT] = {"boot", "offline", "pair", "hello", "ready", "asleep", "listen", "think",
                                          "coding", "research", "making", "delegate", "approval", "reply", "done",
                                          "error", "looking", "battery"};
@@ -82,6 +82,7 @@ static bool parse(Pack* p, const char* id) {
         else if (!strcmp(k, "greet")) snprintf(p->greet, sizeof p->greet, "%s", v);
         else if (!strcmp(k, "sheets")) p->nsheets = atoi(v);
         else if (!strcmp(k, "label_w")) p->label_w = atoi(v);
+        else if (!strcmp(k, "hover")) { p->hover = atoi(v); if (p->hover < 0 || p->hover > 8) p->hover = 0; }
         else if (!strcmp(k, "still")) {
             char n[24]; int s, i, x, y, t;
             if (sscanf(v, "%23s %d %d %d %d %d", n, &s, &i, &x, &y, &t) != 6) { bad = true; continue; }
