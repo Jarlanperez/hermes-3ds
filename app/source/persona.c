@@ -31,7 +31,7 @@ static const char* POSE_NAME[PO_COUNT] = {"hello", "listen", "think", "code", "r
 static const char* FRAME_NAME[FR_COUNT] = {"hello_blink", "listen_blink", "think_blink", "code_blink", "reply_blink",
                                            "asleep_blink", "attention_blink", "error_blink", "battery_blink",
                                            "reply_talk", "reply_closed", "code_type", "code_wipe_a", "code_wipe_b",
-                                           "asleep_snore", "battery_chew", "fx_0", "fx_1", "fx_2", "fx_3"};
+                                           "asleep_snore", "battery_chew", "fx_0", "fx_1", "fx_2", "fx_3", "fx_4", "fx_5", "fx_6", "fx_7"};
 static const char* MODE_NAME[M_COUNT] = {"boot", "offline", "pair", "hello", "ready", "asleep", "listen", "think",
                                          "coding", "research", "making", "delegate", "approval", "reply", "done",
                                          "error", "looking", "battery"};

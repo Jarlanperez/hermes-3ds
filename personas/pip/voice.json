@@ -1,4 +1,5 @@
 {
-  "voice": "am_puck",
+  "voice": "am_echo",
+  "speed": 0.9,
   "look_cue": "Ooh, let me take a look!"
 }

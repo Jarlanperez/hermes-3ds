@@ -6,7 +6,7 @@
 enum { PO_HELLO, PO_LISTEN, PO_THINK, PO_CODE, PO_REPLY, PO_ASLEEP, PO_ATTENTION, PO_ERROR, PO_BATTERY, PO_COUNT };
 // frames: FR_BLINK + pose is that pose's blink; then the special-purpose frames
 enum { FR_BLINK = 0, FR_REPLY_TALK = PO_COUNT, FR_REPLY_CLOSED, FR_CODE_TYPE, FR_CODE_WIPE_A, FR_CODE_WIPE_B,
-       FR_ASLEEP_SNORE, FR_BATTERY_CHEW, FR_FX0, FR_FX1, FR_FX2, FR_FX3, FR_COUNT };   // fx: looping layer under the figure
+       FR_ASLEEP_SNORE, FR_BATTERY_CHEW, FR_FX0, FR_FX1, FR_FX2, FR_FX3, FR_FX4, FR_FX5, FR_FX6, FR_FX7, FR_COUNT };   // fx: looping layer under the figure
 #define M_COUNT   (M_BATTERY + 1)
 #define PK_MAX    8
 #define PK_SHEETS 6

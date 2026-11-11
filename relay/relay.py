@@ -668,13 +668,17 @@ def speak(text):
 def speak_as(who, t):
     """Voice one chunk with the persona's voice.json (voice, and optionally url / model); else the relay default."""
     vc = PERSONA_CFG.get(who, {}).get("voice", {})
-    return speak_raw(t, vc.get("url") or VOICE_URL, vc.get("voice") or VOICE_NAME, vc.get("model") or CONF["voice_model"])
+    return speak_raw(t, vc.get("url") or VOICE_URL, vc.get("voice") or VOICE_NAME, vc.get("model") or CONF["voice_model"],
+                     vc.get("speed"))
 
-def speak_raw(t, url=None, voice=None, model=None):
+def speak_raw(t, url=None, voice=None, model=None, speed=None):
     url = url or VOICE_URL
     if not t or not url:
         return None
-    body = json.dumps({"model": model or CONF["voice_model"], "voice": voice or VOICE_NAME, "input": t, "response_format": "wav"}).encode()
+    req_body = {"model": model or CONF["voice_model"], "voice": voice or VOICE_NAME, "input": t, "response_format": "wav"}
+    if isinstance(speed, (int, float)) and 0.5 <= speed <= 2.0:
+        req_body["speed"] = speed
+    body = json.dumps(req_body).encode()
     req = urllib.request.Request(url, body, {"Authorization": f"Bearer {CONF['voice_key']}", "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=60) as r:

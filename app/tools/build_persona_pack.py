@@ -27,7 +27,7 @@ FALLBACK = {"listen": "hello", "think": "hello", "code": "think", "reply": "hell
             "attention": "hello", "error": "attention", "battery": "hello"}
 ROLES = [p + "_blink" for p in POSES] + ["reply_talk", "reply_closed", "code_type", "code_wipe_a", "code_wipe_b",
                                        "asleep_snore", "battery_chew"]
-FX = ["fx_0", "fx_1", "fx_2", "fx_3"]             # optional looping layer drawn UNDER the figure (exhaust, glow)
+FX = [f"fx_{i}" for i in range(8)]             # optional looping layer drawn UNDER the figure (exhaust, glow)
 ROLE_POSE = {r: (r[:-6] if r.endswith("_blink") else r.split("_")[0]) for r in ROLES}
 DARK = {"attention", "error", "battery"}
 PAPER, FIELD, INK = (0xF2, 0xEF, 0xE8), (0x14, 0x14, 0x14), (0x1A, 0x1A, 0x1A)

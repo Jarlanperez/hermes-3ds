@@ -42,11 +42,12 @@ the agent gets is the app's own rules (short replies, plain text, the small scre
 ### voice.json
 
 ```json
-{ "voice": "am_puck", "look_cue": "Ooh, let me take a look!" }
+{ "voice": "am_echo", "speed": 0.9, "look_cue": "Ooh, let me take a look!" }
 ```
 
 - `voice`: a voice name your TTS server knows. Kokoro has many (`af_heart`, `af_bella`, `am_adam`,
-  `am_puck`, ...).
+  `am_echo`, ...).
+- `speed`: optional, 0.5 to 2.0 (1.0 is normal). Pip uses 0.9 for a calmer delivery.
 - `url`, `model`: a different OpenAI-compatible `/v1/audio/speech` server for this persona only.
 - `look_cue`: the line spoken while a photo is being studied. Default: "Let me take a look."
 
@@ -59,7 +60,7 @@ background (the figure sits on the right, the text runs to its left).
 personas/<id>/sprites/stills/<pose>.png    hello listen think code reply asleep attention error battery
 personas/<id>/sprites/frames/<role>.png    optional animation: <pose>_blink, reply_talk, reply_closed,
                                            code_type, code_wipe_a, code_wipe_b, asleep_snore, battery_chew,
-                                           fx_0..fx_3 (a looping layer under the figure, like exhaust)
+                                           fx_0..fx_7 (a looping layer under the figure, like exhaust; 120 ms per frame)
 personas/<id>/screen.txt                   optional screen copy, see below
 ```
 
